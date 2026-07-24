@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Bezier 1</title>
+  <meta name="theme-color" content="#0a0a0a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="icon" type="image/svg+xml" href="fav.svg">
+  
+  <!-- fxhash SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/fxhash@2.0.2/dist/fxhash.min.js"></script>
+  
+  <style>
+    /* --- PERFECT RESET --- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    html, body {
+      background: #0a0a0a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      min-height: 100dvh;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe UI', Roboto, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+    }
+    
+    /* --- MAIN CONTAINER --- */
+    #main-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      padding: 20px;
+      gap: 8px;
+    }
+    
+    /* --- TITLE (CENTER TOP) --- */
+    .title-bar {
+      text-align: center;
+      flex-shrink: 0;
+      padding: 2px 0;
+      width: 100%;
+    }
+    .title-bar .title {
+      font-size: 22px;
+      font-weight: 300;
+      letter-spacing: 8px;
+      color: rgba(255,255,255,0.85);
+      text-transform: uppercase;
+    }
+    .title-bar .title .accent {
+      color: #c9a84c;
+      font-weight: 400;
+    }
+    
+    /* --- CANVAS CONTAINER --- */
+    #canvas-container {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      min-height: 0;
+      padding: 0 10px;
+      position: relative;
+    }
+    
+    canvas {
+      display: block;
+      box-shadow: 0 0 80px rgba(0,0,0,0.9);
+      image-rendering: auto;
+      touch-action: none;
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      border-radius: 2px;
+      transition: opacity 0.6s ease, transform 0.6s ease;
+      background: #0a0a0a;
+    }
+    
+    /* --- SHIRT MOCKUP --- */
+    #shirt-mockup {
+      display: none;
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      border-radius: 2px;
+      box-shadow: 0 0 80px rgba(0,0,0,0.9);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    #shirt-mockup.active {
+      display: block;
+      animation: fadeIn 0.6s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    
+    canvas.hidden {
+      display: none;
+    }
+    
+    /* --- BOTTOM BAR --- */
+    .bottom-bar {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      gap: 6px;
+      padding: 4px 0;
+    }
+    
+    /* --- CONTROLS --- */
+    .controls-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .controls {
+      color: rgba(255,255,255,0.7);
+      background: rgba(255,255,255,0.04);
+      padding: 8px 20px;
+      border-radius: 30px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe UI', Roboto, Arial, sans-serif;
+      font-size: 11px;
+      font-weight: 400;
+      border: 1px solid rgba(255,255,255,0.08);
+      text-align: center;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: all 0.3s ease;
+      letter-spacing: 0.8px;
+      touch-action: manipulation;
+      min-height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .controls:hover {
+      color: rgba(255,255,255,0.95);
+      border-color: rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.08);
+    }
+    .controls:active {
+      transform: scale(0.95);
+    }
+    .controls .key {
+      color: rgba(255,255,255,0.5);
+      font-weight: 300;
+    }
+    .controls .sep {
+      color: rgba(255,255,255,0.15);
+      margin: 0 4px;
+    }
+    
+    /* --- SHIRT BUTTON --- */
+    .controls.shirt-btn {
+      border-color: rgba(201, 168, 76, 0.2);
+      color: rgba(201, 168, 76, 0.7);
+      letter-spacing: 1px;
+    }
+    .controls.shirt-btn:hover {
+      border-color: rgba(201, 168, 76, 0.4);
+      color: #c9a84c;
+      background: rgba(201, 168, 76, 0.06);
+    }
+    .controls.shirt-btn.active {
+      border-color: rgba(201, 168, 76, 0.5);
+      color: #c9a84c;
+      background: rgba(201, 168, 76, 0.08);
+    }
+    .controls.shirt-btn .icon {
+      font-size: 14px;
+      line-height: 1;
+    }
+    
+    /* --- INFO ROW --- */
+    .info-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 14px;
+      color: rgba(255,255,255,0.3);
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+      font-size: 9px;
+      letter-spacing: 0.5px;
+      flex-wrap: wrap;
+      padding: 2px 0;
+    }
+    .info-row .info-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 12px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.04);
+      background: rgba(255,255,255,0.02);
+    }
+    .info-row .label {
+      color: rgba(255,255,255,0.25);
+      font-weight: 300;
+    }
+    .info-row .value {
+      color: rgba(255,255,255,0.6);
+      font-weight: 400;
+    }
+    
+    /* --- DESCRIPTION --- */
+    .description {
+      display: block;
+      text-align: center;
+      color: rgba(255,255,255,0.25);
+      font-size: 8px;
+      letter-spacing: 1.2px;
+      line-height: 1.8;
+      padding: 2px 10px;
+      font-weight: 300;
+      max-width: 500px;
+      width: 100%;
+      text-transform: uppercase;
+    }
+    .description .highlight {
+      color: rgba(255,255,255,0.4);
+    }
+    .description .sep {
+      color: rgba(255,255,255,0.08);
+      margin: 0 4px;
+    }
+    
+    /* ============================================
+       RESPONSIVE
+    ============================================ */
+    
+    @media (max-width: 1024px) {
+      #main-container { padding: 16px; gap: 6px; }
+      .title-bar .title { font-size: 20px; letter-spacing: 6px; }
+      .controls { font-size: 10px; padding: 7px 16px; min-height: 34px; }
+      .info-row { font-size: 8.5px; gap: 12px; }
+      .info-row .info-item { padding: 2px 10px; }
+      .description { font-size: 7.5px; letter-spacing: 1px; }
+    }
+    
+    @media (max-width: 768px) {
+      #main-container { padding: 12px; gap: 5px; }
+      .title-bar .title { font-size: 17px; letter-spacing: 5px; }
+      #canvas-container { padding: 0 6px; }
+      .controls { font-size: 9px; padding: 6px 14px; min-height: 32px; letter-spacing: 0.6px; }
+      .controls-row { gap: 6px; }
+      .info-row { font-size: 8px; gap: 10px; }
+      .info-row .info-item { padding: 2px 8px; }
+      .description { font-size: 7px; letter-spacing: 0.8px; padding: 2px 6px; }
+      .controls.shirt-btn .icon { font-size: 12px; }
+    }
+    
+    @media (max-width: 480px) {
+      #main-container { padding: 8px; gap: 4px; }
+      .title-bar .title { font-size: 14px; letter-spacing: 4px; }
+      #canvas-container { padding: 0 4px; }
+      .controls { font-size: 8px; padding: 5px 12px; min-height: 28px; border-radius: 24px; letter-spacing: 0.4px; }
+      .controls-row { gap: 4px; }
+      .info-row { font-size: 7px; gap: 8px; }
+      .info-row .info-item { padding: 2px 6px; gap: 4px; }
+      .description { font-size: 6.5px; letter-spacing: 0.6px; padding: 2px 4px; line-height: 1.6; }
+      .controls.shirt-btn .icon { font-size: 11px; }
+    }
+    
+    @media (max-width: 380px) {
+      #main-container { padding: 6px; gap: 3px; }
+      .title-bar .title { font-size: 12px; letter-spacing: 3px; }
+      #canvas-container { padding: 0 2px; }
+      .controls { font-size: 7px; padding: 4px 10px; min-height: 26px; border-radius: 20px; }
+      .info-row { font-size: 6.5px; gap: 6px; }
+      .info-row .info-item { padding: 1px 5px; border-radius: 14px; }
+      .description { font-size: 6px; letter-spacing: 0.5px; padding: 1px 3px; }
+      .controls.shirt-btn .icon { font-size: 10px; }
+    }
+    
+    @media (orientation: landscape) and (max-height: 500px) {
+      #main-container { padding: 10px 20px; gap: 4px; flex-direction: row; flex-wrap: wrap; }
+      .title-bar { width: 100%; flex-shrink: 0; }
+      .title-bar .title { font-size: 16px; letter-spacing: 4px; }
+      #canvas-container { flex: 1; min-height: 0; height: 100%; padding: 0 8px; }
+      .bottom-bar { width: auto; max-width: 180px; flex-shrink: 0; gap: 4px; padding: 0 4px; }
+      .controls { font-size: 8px; padding: 5px 12px; min-height: 28px; letter-spacing: 0.4px; }
+      .controls-row { flex-direction: column; gap: 4px; }
+      .info-row { font-size: 7px; gap: 6px; flex-direction: column; align-items: stretch; }
+      .info-row .info-item { padding: 2px 8px; justify-content: center; }
+      .description { font-size: 6px; max-width: 160px; padding: 1px 4px; line-height: 1.4; letter-spacing: 0.5px; }
+    }
+    
+    @media (orientation: landscape) and (max-height: 380px) {
+      #main-container { padding: 6px 12px; gap: 3px; }
+      .title-bar .title { font-size: 13px; letter-spacing: 3px; }
+      #canvas-container { padding: 0 4px; }
+      .bottom-bar { max-width: 140px; gap: 3px; }
+      .controls { font-size: 7px; padding: 4px 10px; min-height: 24px; border-radius: 16px; }
+      .info-row { font-size: 6px; gap: 4px; }
+      .info-row .info-item { padding: 1px 6px; }
+      .description { font-size: 5.5px; max-width: 120px; padding: 1px 3px; }
+    }
+    
+    @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+      canvas { image-rendering: auto; }
+    }
+    
+    @supports (-webkit-touch-callout: none) {
+      .controls { min-height: 40px; }
+    }
+    
+    @media (prefers-reduced-motion: reduce) {
+      .controls, canvas, #shirt-mockup { transition: none; }
+      #shirt-mockup.active { animation: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- MAIN CONTAINER -->
+<div id="main-container">
+
+  <!-- TITLE (CENTER TOP) -->
+  <div class="title-bar">
+    <div class="title"><span class="accent">Bezier</span> 1</div>
+  </div>
+
+  <!-- CANVAS CONTAINER -->
+  <div id="canvas-container">
+    <canvas id="target"></canvas>
+    <img id="shirt-mockup" src="Bezier-1.jpg" alt="Bezier 1 on T-Shirt" />
+  </div>
+
+  <!-- BOTTOM BAR -->
+  <div class="bottom-bar">
+
+    <!-- CONTROLS ROW -->
+    <div class="controls-row">
+      <div class="controls" id="controlsBar">
+        <span class="key">●</span> regenerate <span class="sep">—</span> <span class="key">S</span> save
+      </div>
+      <div class="controls shirt-btn" id="shirtToggle">
+        <span class="icon">◷</span> apparel
+      </div>
+    </div>
+
+    <!-- INFO ROW -->
+    <div class="info-row">
+      <div class="info-item">
+        <span class="label">seed</span>
+        <span class="value" id="seedDisplay">---</span>
+      </div>
+      <div class="info-item">
+        <span class="label">curves</span>
+        <span class="value" id="curvesDisplay">---</span>
+      </div>
+      <div class="info-item">
+        <span class="label">divisions</span>
+        <span class="value" id="divisionsDisplay">---</span>
+      </div>
+      <div class="info-item">
+        <span class="label">hash</span>
+        <span class="value" id="hashDisplay">---</span>
+      </div>
+    </div>
+
+    <!-- DESCRIPTION -->
+    <div class="description">
+      <span class="highlight">bezier curves</span>
+      <span class="sep">·</span>
+      <span class="highlight">3–50 curves</span>
+      <span class="sep">·</span>
+      <span class="highlight">4–100 divisions</span>
+      <span class="sep">·</span>
+      <span class="highlight">random colors</span>
+      <span class="sep">·</span>
+      <span class="highlight">seed-based</span>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+// ============================================
+// BEZIER 1 — MINIMAL T-SHIRT EDITION
+// ============================================
+
+// --- DETERMINISTIC RANDOM GENERATOR ---
+class RandomGenerator {
+  constructor(seed) {
+    this.seed = seed;
+    this.state = seed;
+  }
+  rand() {
+    let x = this.state;
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    this.state = x;
+    return (x >>> 0) / 4294967296;
+  }
+}
+
+// --- STATE ---
+const ratio = 1 / 1;
+const prefix = 'Bezier 1';
+const features = {};
+let seed = Date.now() + Math.random() * 1000000;
+let rng = new RandomGenerator(seed);
+let showingShirt = false;
+let resizeTmr = null;
+let thumbnailTaken = false;
+let animated = false;
+let nextFrame = null;
+
+// --- URL PARAMS ---
+const urlSearchParams = new URLSearchParams(window.location.search);
+const urlParams = Object.fromEntries(urlSearchParams.entries());
+let forceDownloaded = false;
+
+// --- COLOR ARRAYS ---
+const backgroundColours = [
+  '#040720', '#0C090A', '#34282C', '#151B54', '#033E3E', '#25383C',
+  '#2C3539', '#004225', '#483C32', '#3B2F2F', '#43302E', '#551606',
+  '#3F000F', '#2F0909', '#2B1B17', '#583759', '#36013F', '#2E1A47', '#342D7E'
+];
+
+const backgroundNames = [
+  'Black Blue', 'Night', 'Charcoal', 'Night Blue', 'Deep Teal', 'DarkSlateGray',
+  'Gunmetal', 'Lotus Green', 'Taupe', 'Dark Coffee', 'Old Burgundy', 'Blood Night',
+  'Chocolate Brown', 'Dark Maroon', 'Midnight', 'Plum Purple', 'Deep Purple',
+  'Midnight Purple', 'Blue Whale'
+];
+
+const foregroundColours = [
+  '#565051', '#C9C1C1', '#98AFC7', '#728FCE', '#0020C2', '#14A3C7', '#EBF4FA',
+  '#57FEFF', '#77BFC7', '#01F9C6', '#5F9EA0', '#00A36C', '#808000', '#08A04B',
+  '#E2F516', '#CCFB5D', '#FFFFCC', '#FBB117', '#FFA500', '#BCB88A', '#C9BE62',
+  '#CD853F', '#966F33', '#665D1E', '#804A00', '#A0522D', '#C34A2C', '#B83C08',
+  '#EB5406', '#C36241', '#FF5F1F', '#FA8072', '#FD1C03', '#C11B17', '#9F000F',
+  '#CC7A8B', '#FFCBA4', '#F778A1', '#E75480', '#F6358A', '#FA2A55', '#F433FF',
+  '#5E5A80', '#822EFF', '#C8C4DF', '#E9E4D4'
+];
+
+const foregroundNames = [
+  'Vampire Gray', 'Steampunk', 'Blue Gray', 'Light Purple Blue', 'Cobalt Blue',
+  'Cyan Blue', 'Water', 'Blue Zircon', 'Blue Hosta', 'Bright Teal', 'CadetBlue',
+  'Jade', 'Olive', 'Irish Green', 'Yellow Green Grosbeak', 'Tea Green', 'Cream',
+  'Beer', 'Orange', 'Sage', 'Ginger Brown', 'Peru', 'Wood', 'Antique Bronze',
+  'Dark Bronze', 'Sienna', 'Chestnut Red', 'Ginger Red', 'Red Gold', 'Rust',
+  'Bright Orange', 'Salmon', 'Neon Red', 'Chilli Pepper', 'Cranberry',
+  'Dusky Pink', 'Deep Peach', 'Carnation Pink', 'Dark Pink', 'Violet Red',
+  'Red Pink', 'Bright Neon Pink', 'Grape', 'Blue Magenta', 'Viola', 'Ash White'
+];
+
+// --- FXHASH PARAMS ---
+let definitions = [
+  {
+    id: "number_id1",
+    name: "Number of Curves",
+    type: "number",
+    options: {
+      min: 3,
+      max: 50,
+      step: 1,
+    },
+  },
+  {
+    id: "number_id2",
+    name: "Number Of Divisions",
+    type: "number",
+    options: {
+      min: 4,
+      max: 100,
+      step: 1,
+    },
+  }
+];
+
+// --- SETUP ---
+function setup() {
+  const BackgroundIndex = Math.floor(rng.rand() * backgroundColours.length);
+  const BackgroundColor = backgroundColours[BackgroundIndex];
+
+  features.backgroundColour = '#000000';
+  features.Color1 = BackgroundColor;
+  features.Color2 = foregroundColours;
+  
+  // --- IMPORTANT: Get params from fxhash if available ---
+  if (typeof $fx !== 'undefined' && $fx.getParam) {
+    features.NumberofCurves = $fx.getParam('number_id1');
+    features.numberOfDivisions = $fx.getParam('number_id2');
+  } else {
+    features.NumberofCurves = Math.floor(rng.rand() * 47) + 3;
+    features.numberOfDivisions = Math.floor(rng.rand() * 96) + 4;
+  }
+
+  const Color = [];
+  const readableFeaturesObj = {};
+  readableFeaturesObj['Background Color'] = backgroundNames[BackgroundIndex];
+
+  for (let j = features.NumberofCurves; j > 0; j--) {
+    const colorIndex = Math.floor(rng.rand() * features.Color2.length);
+    Color[j] = features.Color2[colorIndex];
+    readableFeaturesObj['Foreground Color ' + j] = foregroundNames[colorIndex];
+  }
+  features.Color3 = Color;
+
+  readableFeaturesObj['Number of Curves'] = features.NumberofCurves;
+  readableFeaturesObj['Number Of Divisions'] = features.numberOfDivisions;
+
+  return readableFeaturesObj;
+}
+
+// --- DRAWING FUNCTIONS ---
+function drawSmoothClosedBezierCurve(ctx, points, LineWidth, Color) {
+  if (points.length < 3) {
+    console.error("At least three points are required to draw a closed curve.");
+    return;
+  }
+
+  ctx.beginPath();
+  ctx.moveTo((points[0][0] + points[points.length - 1][0]) / 2, 
+             (points[0][1] + points[points.length - 1][1]) / 2);
+
+  for (let i = 0; i < points.length; i++) {
+    let nextIndex = (i + 1) % points.length;
+    let xc = (points[i][0] + points[nextIndex][0]) / 2;
+    let yc = (points[i][1] + points[nextIndex][1]) / 2;
+    ctx.quadraticCurveTo(points[i][0], points[i][1], xc, yc);
+  }
+
+  ctx.closePath();
+  ctx.lineWidth = LineWidth;
+  ctx.strokeStyle = Color;
+  ctx.shadowBlur = LineWidth * 0.5;
+  ctx.shadowColor = Color;
+  ctx.stroke();
+}
+
+function anglesForEqualDivisions(numberOfDivisions) {
+  if (numberOfDivisions <= 2) {
+    console.error("Number of divisions should be greater than 2.");
+    return;
+  }
+  const angle = (2 * Math.PI) / numberOfDivisions;
+  const angles = [];
+  for (let i = 0; i < numberOfDivisions; i++) {
+    angles.push(i * angle);
+  }
+  return angles;
+}
+
+// --- MAIN DRAW ---
+function drawCanvas() {
+  window.cancelAnimationFrame(nextFrame);
+
+  const canvas = document.getElementById('target');
+  const ctx = canvas.getContext('2d');
+  const w = ctx.canvas.width;
+  const h = ctx.canvas.height;
+
+  // Fill background
+  ctx.fillStyle = features.Color1 || '#000000';
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.save();
+  ctx.translate(w / 2, h / 2);
+
+  const NumberofCurves = features.NumberofCurves || 5;
+  const numberOfDivisions = features.numberOfDivisions || 10;
+
+  // --- ORIGINAL ALGORITHM: Draw curves from outermost to innermost ---
+  for (let j = NumberofCurves; j > 0; j--) {
+    const Color = features.Color3[j] || '#ffffff';
+    const angle = anglesForEqualDivisions(numberOfDivisions);
+    const points = [];
+    
+    // --- ORIGINAL FORMULA: Z = rand() * 3/4 + 1/4 ---
+    for (let i = 0; i < angle.length; i++) {
+      const Z = rng.rand() * 0.75 + 0.25;
+      const radius = Z * w / (2 * Math.pow(j, 1 / NumberofCurves));
+      points[i] = [
+        radius * Math.cos(angle[i]),
+        radius * Math.sin(angle[i])
+      ];
+    }
+    
+    // --- ORIGINAL FORMULA: LineWidth = w / (50 * j^(1/NumberofCurves) + numberOfDivisions) ---
+    const LineWidth = w / (50 * Math.pow(j, 1 / NumberofCurves) + numberOfDivisions);
+    drawSmoothClosedBezierCurve(ctx, points, LineWidth, Color);
+  }
+
+  ctx.restore();
+
+  if (!thumbnailTaken) {
+    if (typeof $fx !== 'undefined' && $fx.preview) {
+      $fx.preview();
+    }
+    thumbnailTaken = true;
+  }
+
+  if ('forceDownload' in urlParams && forceDownloaded === false) {
+    forceDownloaded = true;
+    autoDownloadCanvas();
+    if (window.parent) {
+      window.parent.postMessage('forceDownloaded', '*');
+    }
+  }
+
+  if (animated) {
+    nextFrame = window.requestAnimationFrame(drawCanvas);
+  }
+
+  // Update UI
+  updateUI();
+}
+
+// --- UPDATE UI ---
+function updateUI() {
+  document.getElementById('seedDisplay').textContent = String(seed).slice(0, 8);
+  document.getElementById('curvesDisplay').textContent = features.NumberofCurves || '---';
+  document.getElementById('divisionsDisplay').textContent = features.numberOfDivisions || '---';
+  if (typeof $fx !== 'undefined' && $fx.hash) {
+    document.getElementById('hashDisplay').textContent = $fx.hash.slice(0, 8);
+  } else {
+    document.getElementById('hashDisplay').textContent = '---';
+  }
+}
+
+// --- REGENERATE ---
+function regenerate() {
+  seed = Date.now() + Math.random() * 1000000;
+  rng = new RandomGenerator(seed);
+  features.Color3 = [];
+  thumbnailTaken = false;
+  
+  const readableFeaturesObj = setup();
+  
+  if (typeof $fx !== 'undefined' && $fx.features) {
+    $fx.features(readableFeaturesObj);
+  }
+  
+  if (showingShirt) {
+    toggleShirt();
+  }
+  
+  layoutCanvas();
+}
+
+// --- TOGGLE SHIRT ---
+function toggleShirt() {
+  showingShirt = !showingShirt;
+  const canvas = document.getElementById('target');
+  const shirtMockup = document.getElementById('shirt-mockup');
+  const shirtToggle = document.getElementById('shirtToggle');
+  
+  if (showingShirt) {
+    canvas.classList.add('hidden');
+    shirtMockup.classList.add('active');
+    shirtToggle.classList.add('active');
+    shirtToggle.innerHTML = '<span class="icon">◷</span> artwork';
+  } else {
+    canvas.classList.remove('hidden');
+    shirtMockup.classList.remove('active');
+    shirtToggle.classList.remove('active');
+    shirtToggle.innerHTML = '<span class="icon">◷</span> apparel';
+  }
+}
+
+// --- DOWNLOAD ---
+function autoDownloadCanvas() {
+  const canvas = document.getElementById('target');
+  const link = document.createElement('a');
+  
+  let filename = prefix + '_' + String(seed).slice(0, 8);
+  if (typeof $fx !== 'undefined' && $fx.hash) {
+    filename = prefix + '_' + $fx.hash;
+  }
+  if ('forceId' in urlParams) {
+    filename = prefix + '_' + urlParams.forceId.toString().padStart(4, '0') + '_' + (typeof $fx !== 'undefined' ? $fx.hash : String(seed).slice(0, 8));
+  }
+  
+  link.download = filename;
+  link.href = canvas.toDataURL('image/png', 1.0);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+// --- LAYOUT CANVAS ---
+function layoutCanvas() {
+  window.cancelAnimationFrame(nextFrame);
+  
+  const container = document.getElementById('canvas-container');
+  const containerRect = container.getBoundingClientRect();
+  let maxWidth = containerRect.width;
+  let maxHeight = containerRect.height;
+  
+  maxWidth = Math.max(maxWidth, 80);
+  maxHeight = Math.max(maxHeight, 80);
+  
+  let cWidth = maxWidth;
+  let cHeight = cWidth / ratio;
+  
+  if (cHeight > maxHeight) {
+    cHeight = maxHeight;
+    cWidth = maxHeight * ratio;
+  }
+  
+  cWidth = Math.max(cWidth, 80);
+  cHeight = Math.max(cHeight, 80);
+  
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  
+  let targetWidth = cWidth * dpr;
+  let targetHeight = cHeight * dpr;
+  
+  if ('forceWidth' in urlParams) {
+    targetWidth = parseInt(urlParams.forceWidth);
+    targetHeight = Math.floor(targetWidth / ratio);
+    dpr = 1;
+  }
+  
+  const canvas = document.getElementById('target');
+  canvas.width = targetWidth;
+  canvas.height = targetHeight;
+  canvas.style.width = cWidth + 'px';
+  canvas.style.height = cHeight + 'px';
+  
+  const shirtMockup = document.getElementById('shirt-mockup');
+  shirtMockup.style.width = cWidth + 'px';
+  shirtMockup.style.height = cHeight + 'px';
+  
+  drawCanvas();
+}
+
+// --- RESIZE ---
+function handleResize() {
+  clearTimeout(resizeTmr);
+  resizeTmr = setTimeout(() => {
+    layoutCanvas();
+  }, 100);
+}
+
+// --- KEYBOARD ---
+document.addEventListener('keydown', function(e) {
+  if (e.key === 's' || e.key === 'S') {
+    e.preventDefault();
+    autoDownloadCanvas();
+  }
+  if (e.key === 'r' || e.key === 'R') {
+    e.preventDefault();
+    regenerate();
+  }
+  if (e.key === 't' || e.key === 'T') {
+    e.preventDefault();
+    toggleShirt();
+  }
+});
+
+// --- CONTROLS ---
+document.getElementById('controlsBar').addEventListener('click', regenerate);
+document.getElementById('controlsBar').addEventListener('touchend', function(e) {
+  e.preventDefault();
+  regenerate();
+});
+
+document.getElementById('shirtToggle').addEventListener('click', toggleShirt);
+document.getElementById('shirtToggle').addEventListener('touchend', function(e) {
+  e.preventDefault();
+  toggleShirt();
+});
+
+// --- WINDOW ---
+window.addEventListener('resize', handleResize);
+window.addEventListener('orientationchange', function() {
+  setTimeout(handleResize, 400);
+});
+
+// --- VISIBILITY ---
+document.addEventListener('visibilitychange', function() {
+  if (!document.hidden) {
+    setTimeout(() => {
+      if (!showingShirt) {
+        drawCanvas();
+      }
+    }, 100);
+  }
+});
+
+// --- INIT ---
+function init() {
+  // Setup initial state
+  const readableFeaturesObj = setup();
+  
+  if (typeof $fx !== 'undefined' && $fx.features) {
+    $fx.features(readableFeaturesObj);
+  }
+  
+  layoutCanvas();
+  updateUI();
+  
+  console.log('Bezier 1 — Minimal T-Shirt Edition');
+  console.log('◷ Press T to toggle apparel view');
+  console.log('Press S to save');
+  console.log('Press R to regenerate');
+}
+
+// Check for fxhash params
+if (typeof $fx !== 'undefined' && $fx.params) {
+  $fx.params(definitions);
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+
+// Expose functions globally
+window.regenerate = regenerate;
+window.autoDownloadCanvas = autoDownloadCanvas;
+window.toggleShirt = toggleShirt;
+window.drawCanvas = drawCanvas;
+window.layoutCanvas = layoutCanvas;
+</script>
+</body>
+</html>
