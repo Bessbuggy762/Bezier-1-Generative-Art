@@ -9,9 +9,6 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="icon" type="image/svg+xml" href="fav.svg">
   
-  <!-- fxhash SDK -->
-  <script src="https://cdn.jsdelivr.net/npm/fxhash@2.0.2/dist/fxhash.min.js"></script>
-  
   <style>
     /* --- PERFECT RESET --- */
     * {
@@ -388,10 +385,6 @@
         <span class="label">divisions</span>
         <span class="value" id="divisionsDisplay">---</span>
       </div>
-      <div class="info-item">
-        <span class="label">hash</span>
-        <span class="value" id="hashDisplay">---</span>
-      </div>
     </div>
 
     <!-- DESCRIPTION -->
@@ -413,7 +406,7 @@
 
 <script>
 // ============================================
-// BEZIER 1 — MINIMAL T-SHIRT EDITION
+// BEZIER 1 — PURE JS MINIMAL T-SHIRT EDITION
 // ============================================
 
 // --- DETERMINISTIC RANDOM GENERATOR ---
@@ -484,30 +477,6 @@ const foregroundNames = [
   'Red Pink', 'Bright Neon Pink', 'Grape', 'Blue Magenta', 'Viola', 'Ash White'
 ];
 
-// --- FXHASH PARAMS ---
-let definitions = [
-  {
-    id: "number_id1",
-    name: "Number of Curves",
-    type: "number",
-    options: {
-      min: 3,
-      max: 50,
-      step: 1,
-    },
-  },
-  {
-    id: "number_id2",
-    name: "Number Of Divisions",
-    type: "number",
-    options: {
-      min: 4,
-      max: 100,
-      step: 1,
-    },
-  }
-];
-
 // --- SETUP ---
 function setup() {
   const BackgroundIndex = Math.floor(rng.rand() * backgroundColours.length);
@@ -516,31 +485,15 @@ function setup() {
   features.backgroundColour = '#000000';
   features.Color1 = BackgroundColor;
   features.Color2 = foregroundColours;
-  
-  // --- IMPORTANT: Get params from fxhash if available ---
-  if (typeof $fx !== 'undefined' && $fx.getParam) {
-    features.NumberofCurves = $fx.getParam('number_id1');
-    features.numberOfDivisions = $fx.getParam('number_id2');
-  } else {
-    features.NumberofCurves = Math.floor(rng.rand() * 47) + 3;
-    features.numberOfDivisions = Math.floor(rng.rand() * 96) + 4;
-  }
+  features.NumberofCurves = Math.floor(rng.rand() * 47) + 3;
+  features.numberOfDivisions = Math.floor(rng.rand() * 96) + 4;
 
   const Color = [];
-  const readableFeaturesObj = {};
-  readableFeaturesObj['Background Color'] = backgroundNames[BackgroundIndex];
-
   for (let j = features.NumberofCurves; j > 0; j--) {
     const colorIndex = Math.floor(rng.rand() * features.Color2.length);
     Color[j] = features.Color2[colorIndex];
-    readableFeaturesObj['Foreground Color ' + j] = foregroundNames[colorIndex];
   }
   features.Color3 = Color;
-
-  readableFeaturesObj['Number of Curves'] = features.NumberofCurves;
-  readableFeaturesObj['Number Of Divisions'] = features.numberOfDivisions;
-
-  return readableFeaturesObj;
 }
 
 // --- DRAWING FUNCTIONS ---
@@ -601,13 +554,12 @@ function drawCanvas() {
   const NumberofCurves = features.NumberofCurves || 5;
   const numberOfDivisions = features.numberOfDivisions || 10;
 
-  // --- ORIGINAL ALGORITHM: Draw curves from outermost to innermost ---
+  // Draw curves from outermost to innermost
   for (let j = NumberofCurves; j > 0; j--) {
     const Color = features.Color3[j] || '#ffffff';
     const angle = anglesForEqualDivisions(numberOfDivisions);
     const points = [];
     
-    // --- ORIGINAL FORMULA: Z = rand() * 3/4 + 1/4 ---
     for (let i = 0; i < angle.length; i++) {
       const Z = rng.rand() * 0.75 + 0.25;
       const radius = Z * w / (2 * Math.pow(j, 1 / NumberofCurves));
@@ -617,19 +569,11 @@ function drawCanvas() {
       ];
     }
     
-    // --- ORIGINAL FORMULA: LineWidth = w / (50 * j^(1/NumberofCurves) + numberOfDivisions) ---
     const LineWidth = w / (50 * Math.pow(j, 1 / NumberofCurves) + numberOfDivisions);
     drawSmoothClosedBezierCurve(ctx, points, LineWidth, Color);
   }
 
   ctx.restore();
-
-  if (!thumbnailTaken) {
-    if (typeof $fx !== 'undefined' && $fx.preview) {
-      $fx.preview();
-    }
-    thumbnailTaken = true;
-  }
 
   if ('forceDownload' in urlParams && forceDownloaded === false) {
     forceDownloaded = true;
@@ -652,11 +596,6 @@ function updateUI() {
   document.getElementById('seedDisplay').textContent = String(seed).slice(0, 8);
   document.getElementById('curvesDisplay').textContent = features.NumberofCurves || '---';
   document.getElementById('divisionsDisplay').textContent = features.numberOfDivisions || '---';
-  if (typeof $fx !== 'undefined' && $fx.hash) {
-    document.getElementById('hashDisplay').textContent = $fx.hash.slice(0, 8);
-  } else {
-    document.getElementById('hashDisplay').textContent = '---';
-  }
 }
 
 // --- REGENERATE ---
@@ -664,13 +603,8 @@ function regenerate() {
   seed = Date.now() + Math.random() * 1000000;
   rng = new RandomGenerator(seed);
   features.Color3 = [];
-  thumbnailTaken = false;
   
-  const readableFeaturesObj = setup();
-  
-  if (typeof $fx !== 'undefined' && $fx.features) {
-    $fx.features(readableFeaturesObj);
-  }
+  setup();
   
   if (showingShirt) {
     toggleShirt();
@@ -704,19 +638,15 @@ function autoDownloadCanvas() {
   const canvas = document.getElementById('target');
   const link = document.createElement('a');
   
-  let filename = prefix + '_' + String(seed).slice(0, 8);
-  if (typeof $fx !== 'undefined' && $fx.hash) {
-    filename = prefix + '_' + $fx.hash;
-  }
-  if ('forceId' in urlParams) {
-    filename = prefix + '_' + urlParams.forceId.toString().padStart(4, '0') + '_' + (typeof $fx !== 'undefined' ? $fx.hash : String(seed).slice(0, 8));
-  }
+  const seedStr = String(seed).slice(0, 8);
+  link.download = prefix + '_Seed' + seedStr + '.png';
   
-  link.download = filename;
-  link.href = canvas.toDataURL('image/png', 1.0);
-  document.body.appendChild(link);
+  if (showingShirt) {
+    link.href = document.getElementById('shirt-mockup').src;
+  } else {
+    link.href = canvas.toDataURL('image/png', 1.0);
+  }
   link.click();
-  document.body.removeChild(link);
 }
 
 // --- LAYOUT CANVAS ---
@@ -822,25 +752,14 @@ document.addEventListener('visibilitychange', function() {
 
 // --- INIT ---
 function init() {
-  // Setup initial state
-  const readableFeaturesObj = setup();
-  
-  if (typeof $fx !== 'undefined' && $fx.features) {
-    $fx.features(readableFeaturesObj);
-  }
-  
+  setup();
   layoutCanvas();
   updateUI();
   
-  console.log('Bezier 1 — Minimal T-Shirt Edition');
+  console.log('Bezier 1 — Pure JS Minimal T-Shirt Edition');
   console.log('◷ Press T to toggle apparel view');
   console.log('Press S to save');
   console.log('Press R to regenerate');
-}
-
-// Check for fxhash params
-if (typeof $fx !== 'undefined' && $fx.params) {
-  $fx.params(definitions);
 }
 
 if (document.readyState === 'loading') {
